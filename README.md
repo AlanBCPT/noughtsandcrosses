@@ -16,7 +16,7 @@ A Noughts and Crosses (Tic-Tac-Toe) game built in Java with a Swing GUI. Play ag
 
 ## Requirements
 
-- Java 8 or later (developed and tested on Java 21)
+- Java 11 or later (developed and tested on Java 21)
 
 ## Building and Running
 
@@ -39,10 +39,19 @@ On startup, a dialog asks whether you want to play against a human or the comput
 The tests use JUnit 5. Maven Central is unreachable on this machine, so the JUnit
 console launcher is vendored into `lib/` (git-ignored). Download it once:
 
+**bash / macOS / Linux:**
+
 ```bash
 mkdir -p lib
 curl -o lib/junit-platform-console-standalone.jar \
   https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
+```
+
+**PowerShell (Windows):**
+
+```powershell
+New-Item -ItemType Directory -Force lib
+Invoke-WebRequest -Uri https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar -OutFile lib/junit-platform-console-standalone.jar
 ```
 
 Compile and run the suite (use `;` between classpath entries on Windows, `:` on macOS/Linux):
