@@ -36,8 +36,9 @@ On startup, a dialog asks whether you want to play against a human or the comput
 
 ## Testing
 
-The tests use JUnit 5. Maven Central is unreachable on this machine, so the JUnit
-console launcher is vendored into `lib/` (git-ignored). Download it once:
+The tests use JUnit 5. The project builds with `javac`/`java` directly. The JUnit
+console standalone launcher is not committed to the repository — download it once
+into `lib/`:
 
 **bash / macOS / Linux:**
 
