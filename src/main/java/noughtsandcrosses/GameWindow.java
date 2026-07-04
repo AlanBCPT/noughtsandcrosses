@@ -8,7 +8,7 @@ public final class GameWindow extends JFrame {
 
     private static final Font STATUS_FONT       = new Font("SansSerif", Font.BOLD, 18);
     private static final int  WINDOW_SIZE       = 480;
-    private static final int  WINDOW_CHROME     = 90;
+    private static final int  STATUS_AND_BUTTON_BAR_HEIGHT = 90;
     private static final int  COMPUTER_DELAY_MS = 450;
 
     private final GameOptions options;
@@ -24,6 +24,7 @@ public final class GameWindow extends JFrame {
         this.game        = new Game(options.startingPlayer());
 
         layoutComponents();
+        setVisible(true);
         startTurn();
     }
 
@@ -122,10 +123,9 @@ public final class GameWindow extends JFrame {
         add(buildButtonBar(), BorderLayout.SOUTH);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(WINDOW_SIZE, WINDOW_SIZE + WINDOW_CHROME);
+        setSize(WINDOW_SIZE, WINDOW_SIZE + STATUS_AND_BUTTON_BAR_HEIGHT);
         setLocationRelativeTo(null);
         setResizable(false);
-        setVisible(true);
     }
 
     private JLabel buildStatusLabel() {

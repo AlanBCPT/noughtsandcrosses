@@ -109,7 +109,6 @@ class BoardTest {
 
     @Test
     void fullBoardWithNoLineIsADraw() {
-        // X O X / X O O / O X X  — full, no three in a row
         Board board = new Board()
             .place(0, Symbol.X).place(1, Symbol.O).place(2, Symbol.X)
             .place(3, Symbol.X).place(4, Symbol.O).place(5, Symbol.O)

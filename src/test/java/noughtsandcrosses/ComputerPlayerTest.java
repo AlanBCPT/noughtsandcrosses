@@ -2,6 +2,7 @@ package noughtsandcrosses;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,8 +33,7 @@ class ComputerPlayerTest {
     }
 
     @Test
-    void mediumTakesAnImmediateWin() {
-        // O at 0,1 — winning move is 2. A block is also available at X's 3,4 -> 5.
+    void mediumPrefersWinningOverBlocking() {
         Board board = new Board()
             .place(0, Symbol.O).place(1, Symbol.O)
             .place(3, Symbol.X).place(4, Symbol.X);
@@ -42,8 +42,7 @@ class ComputerPlayerTest {
     }
 
     @Test
-    void mediumBlocksAnImmediateLoss() {
-        // X threatens to complete 0,1,2 at cell 2; O has no win of its own.
+    void mediumBlocksWhenNoWinAvailable() {
         Board board = new Board()
             .place(0, Symbol.X).place(1, Symbol.X)
             .place(4, Symbol.O);
@@ -69,8 +68,7 @@ class ComputerPlayerTest {
     }
 
     @Test
-    void hardBlocksAnImmediateLoss() {
-        // O threatens 0,1,2 at cell 2; X must block there (no win of its own yet).
+    void hardBlocksWhenNoWinAvailable() {
         Board board = new Board()
             .place(0, Symbol.O).place(1, Symbol.O)
             .place(4, Symbol.X);
@@ -87,17 +85,13 @@ class ComputerPlayerTest {
 
     @Test
     void hardNeverLosesEvenWhenMovingSecond() {
-        // A perfect player, moving second against every possible opponent line,
-        // must at worst force a draw.
         for (int opponentOpening = 0; opponentOpening < Board.SIZE; opponentOpening++) {
-            Symbol result = playPerfectAgainstRandom(opponentOpening);
-            assertNotEquals(Symbol.X, result, "perfect O lost to opening " + opponentOpening);
+            Optional<Symbol> result = playPerfectAgainstRandom(opponentOpening);
+            assertNotEquals(Optional.of(Symbol.X), result, "perfect O lost to opening " + opponentOpening);
         }
     }
 
-    // Plays O as a perfect player against an X that opens at the given cell and
-    // then plays randomly; returns the winner, or null for a draw.
-    private Symbol playPerfectAgainstRandom(int opening) {
+    private Optional<Symbol> playPerfectAgainstRandom(int opening) {
         ComputerPlayer perfect = new ComputerPlayer(Difficulty.HARD);
         Random opponent = new Random(opening);
         Game game = new Game(Symbol.X);
@@ -110,9 +104,9 @@ class ComputerPlayerTest {
             result = game.takeTurn(move);
         }
         switch (result) {
-            case X_WINS: return Symbol.X;
-            case O_WINS: return Symbol.O;
-            default:     return null;
+            case X_WINS: return Optional.of(Symbol.X);
+            case O_WINS: return Optional.of(Symbol.O);
+            default:     return Optional.empty();
         }
     }
 

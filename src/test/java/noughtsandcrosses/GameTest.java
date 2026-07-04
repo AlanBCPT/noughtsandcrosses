@@ -39,8 +39,8 @@ class GameTest {
     @Test
     void reportsXWinsAndStopsHandingOver() {
         Game game = new Game(Symbol.X);
-        game.takeTurn(0); game.takeTurn(3); // X O
-        game.takeTurn(1); game.takeTurn(4); // X O
+        game.takeTurn(0); game.takeTurn(3);
+        game.takeTurn(1); game.takeTurn(4);
         Game.Result result = game.takeTurn(2); // X completes top row
 
         assertEquals(Game.Result.X_WINS, result);
@@ -63,10 +63,9 @@ class GameTest {
     @Test
     void reportsADraw() {
         Game game = new Game(Symbol.X);
-        // X O X / X O O / O X X
-        int[] order = {0, 1, 2, 4, 3, 5, 7, 6, 8};
+        int[] moves = {0, 1, 2, 4, 3, 5, 7, 6, 8};
         Game.Result result = Game.Result.IN_PROGRESS;
-        for (int cell : order) {
+        for (int cell : moves) {
             result = game.takeTurn(cell);
         }
         assertEquals(Game.Result.DRAW, result);
