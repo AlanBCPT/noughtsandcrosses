@@ -2,85 +2,73 @@ package noughtsandcrosses;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Objects;
 
-public class GameWindow extends JFrame {
+public final class GameWindow extends JFrame {
 
     private static final Font STATUS_FONT       = new Font("SansSerif", Font.BOLD, 18);
     private static final int  WINDOW_SIZE       = 480;
     private static final int  WINDOW_CHROME     = 90;
     private static final int  COMPUTER_DELAY_MS = 450;
 
-    private final boolean        vsComputer;
-    private final ComputerPlayer computer;
-    private final Symbol         humanSymbol;
-    private final boolean        humanFirst;
-    private final JLabel         statusLabel;
-    private final BoardPanel     boardPanel;
-    private       Game           game;
+    private final GameOptions options;
+    private final JLabel      statusLabel;
+    private final BoardPanel  boardPanel;
+    private       Game        game;
 
-    public GameWindow(boolean vsComputer, ComputerPlayer computer, Symbol humanSymbol, boolean humanFirst) {
+    public GameWindow(GameOptions options) {
         super("Noughts and Crosses");
-        this.vsComputer  = vsComputer;
-        this.computer    = computer;
-        this.humanSymbol = humanSymbol;
-        this.humanFirst  = humanFirst;
-        this.game        = createGame();
+        this.options     = Objects.requireNonNull(options, "options");
+        this.statusLabel = buildStatusLabel();
+        this.boardPanel  = new BoardPanel(this::playMove);
+        this.game        = new Game(options.startingPlayer());
 
-        statusLabel = buildStatusLabel();
-        boardPanel  = new BoardPanel(this::onCellClicked);
-
-        setLayout(new BorderLayout(0, 8));
-        add(statusLabel,    BorderLayout.NORTH);
-        add(boardPanel,     BorderLayout.CENTER);
-        add(buildButtonBar(), BorderLayout.SOUTH);
-
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(WINDOW_SIZE, WINDOW_SIZE + WINDOW_CHROME);
-        setLocationRelativeTo(null);
-        setResizable(false);
-        setVisible(true);
-
+        layoutComponents();
         startTurn();
     }
 
-    private void onCellClicked(int square) {
-        Game.Result result = game.takeTurn(square);
-        boardPanel.refresh(game.getBoard());
-
-        if (result != Game.Result.IN_PROGRESS) {
-            handleGameOver(result);
-            return;
+    private void playMove(int cell) {
+        Game.Result result = game.takeTurn(cell);
+        boardPanel.render(game.board());
+        if (result == Game.Result.IN_PROGRESS) {
+            advanceTurn();
+        } else {
+            endGame(result);
         }
+    }
 
-        if (vsComputer) {
+    private void startTurn() {
+        boardPanel.render(game.board());
+        advanceTurn();
+    }
+
+    private void advanceTurn() {
+        if (isComputersTurn()) {
             boardPanel.disableAll();
             scheduleComputerMove();
         } else {
+            boardPanel.enableAvailable(game.board());
             setStatus(humanTurnStatus());
         }
     }
 
+    private boolean isComputersTurn() {
+        return options.versusComputer() && game.currentPlayer() == options.computerSymbol();
+    }
+
     private void scheduleComputerMove() {
-        setStatus("Computer is thinking\u2026");
+        setStatus("Computer is thinking…");
+        ComputerPlayer computer = options.computer().orElseThrow();
         Timer timer = new Timer(COMPUTER_DELAY_MS, e -> {
             ((Timer) e.getSource()).stop();
-            int square = computer.chooseMove(game.getBoard());
-            Game.Result result = game.takeTurn(square);
-            boardPanel.refresh(game.getBoard());
-
-            if (result != Game.Result.IN_PROGRESS) {
-                handleGameOver(result);
-            } else {
-                boardPanel.enableAvailable(game.getBoard());
-                setStatus(humanTurnStatus());
-            }
+            playMove(computer.chooseMove(game.board(), game.currentPlayer()));
         });
         timer.setRepeats(false);
         timer.start();
     }
 
-    private void handleGameOver(Game.Result result) {
-        game.getBoard().winningLine().ifPresent(boardPanel::highlightWinners);
+    private void endGame(Game.Result result) {
+        game.board().winningLine().ifPresent(boardPanel::highlightWinners);
         boardPanel.disableAll();
         String message = gameOverMessage(result);
         setStatus(message);
@@ -88,24 +76,22 @@ public class GameWindow extends JFrame {
     }
 
     private String gameOverMessage(Game.Result result) {
-        switch (result) {
-            case X_WINS: return vsComputer ? (humanSymbol == Symbol.X ? "You win!" : "Computer wins!") : "Player X wins!";
-            case O_WINS: return vsComputer ? (humanSymbol == Symbol.O ? "You win!" : "Computer wins!") : "Player O wins!";
-            case DRAW:   return "It\u2019s a draw!";
-            default:     return "";
-        }
+        if (result == Game.Result.DRAW) return "It’s a draw!";
+        Symbol winner = result == Game.Result.X_WINS ? Symbol.X : Symbol.O;
+        if (!options.versusComputer()) return "Player " + winner + " wins!";
+        return winner == options.humanSymbol() ? "You win!" : "Computer wins!";
     }
 
     private void promptPlayAgain(String message) {
         SwingUtilities.invokeLater(() -> {
-            String[] options = {"Play Again", "Exit"};
+            String[] choices = {"Play Again", "Exit"};
             int choice = JOptionPane.showOptionDialog(
                 this,
                 message + " Would you like to play again?",
                 "Game Over",
                 JOptionPane.DEFAULT_OPTION,
                 JOptionPane.QUESTION_MESSAGE,
-                null, options, options[0]
+                null, choices, choices[0]
             );
             if (choice == 1 || choice == JOptionPane.CLOSED_OPTION) {
                 System.exit(0);
@@ -116,30 +102,30 @@ public class GameWindow extends JFrame {
     }
 
     private void resetGame() {
-        game = createGame();
-        boardPanel.reset();
+        game = new Game(options.startingPlayer());
         startTurn();
     }
 
-    private Game createGame() {
-        return new Game(humanFirst ? humanSymbol : humanSymbol.opponent());
-    }
-
-    private void startTurn() {
-        if (vsComputer && !humanFirst) {
-            boardPanel.disableAll();
-            scheduleComputerMove();
-        } else {
-            setStatus(humanTurnStatus());
-        }
-    }
-
     private String humanTurnStatus() {
-        return vsComputer ? "Your move\u2026" : "Player " + game.getCurrentPlayer() + "\u2019s turn";
+        if (options.versusComputer()) return "Your move…";
+        return "Player " + game.currentPlayer() + "’s turn";
     }
 
     private void setStatus(String text) {
         statusLabel.setText(text);
+    }
+
+    private void layoutComponents() {
+        setLayout(new BorderLayout(0, 8));
+        add(statusLabel, BorderLayout.NORTH);
+        add(boardPanel, BorderLayout.CENTER);
+        add(buildButtonBar(), BorderLayout.SOUTH);
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(WINDOW_SIZE, WINDOW_SIZE + WINDOW_CHROME);
+        setLocationRelativeTo(null);
+        setResizable(false);
+        setVisible(true);
     }
 
     private JLabel buildStatusLabel() {

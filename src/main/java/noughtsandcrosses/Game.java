@@ -1,36 +1,38 @@
 package noughtsandcrosses;
 
+import java.util.Objects;
 import java.util.Optional;
 
-public class Game {
+public final class Game {
 
     public enum Result { IN_PROGRESS, X_WINS, O_WINS, DRAW }
 
-    private final Board board = new Board();
+    private Board board;
     private Symbol currentPlayer;
 
     public Game(Symbol startingPlayer) {
-        this.currentPlayer = startingPlayer;
+        this.board = new Board();
+        this.currentPlayer = Objects.requireNonNull(startingPlayer, "startingPlayer");
     }
 
-    public Board getBoard() {
+    public Board board() {
         return board;
     }
 
-    public Symbol getCurrentPlayer() {
+    public Symbol currentPlayer() {
         return currentPlayer;
     }
 
-    public Result takeTurn(int square) {
-        board.place(square, currentPlayer);
-        Result result = determineResult();
+    public Result takeTurn(int cell) {
+        board = board.place(cell, currentPlayer);
+        Result result = resultOf(board);
         if (result == Result.IN_PROGRESS) {
             currentPlayer = currentPlayer.opponent();
         }
         return result;
     }
 
-    private Result determineResult() {
+    private static Result resultOf(Board board) {
         Optional<Symbol> winner = board.winner();
         if (winner.isPresent()) {
             return winner.get() == Symbol.X ? Result.X_WINS : Result.O_WINS;

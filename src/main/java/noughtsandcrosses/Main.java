@@ -2,21 +2,27 @@ package noughtsandcrosses;
 
 import javax.swing.*;
 
-public class Main {
+public final class Main {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(Main::launchGame);
     }
 
     private static void launchGame() {
-        boolean vsComputer = askOpponentType();
-        Symbol humanSymbol = vsComputer ? askSymbol() : Symbol.X;
-        ComputerPlayer computer = vsComputer ? new ComputerPlayer(humanSymbol.opponent(), askDifficulty()) : null;
-        boolean humanFirst = !vsComputer || askWhoFirst();
-        new GameWindow(vsComputer, computer, humanSymbol, humanFirst);
+        new GameWindow(chooseOptions());
     }
 
-    private static boolean askOpponentType() {
+    private static GameOptions chooseOptions() {
+        if (!askVersusComputer()) {
+            return GameOptions.humanVsHuman();
+        }
+        Symbol humanSymbol = askSymbol();
+        Difficulty difficulty = askDifficulty();
+        boolean humanFirst = askHumanFirst();
+        return GameOptions.versusComputer(humanSymbol, humanFirst, new ComputerPlayer(difficulty));
+    }
+
+    private static boolean askVersusComputer() {
         return showDialog("Who would you like to play against?", new String[]{"Human", "Computer"}, 0) == 1;
     }
 
@@ -25,7 +31,7 @@ public class Main {
             ? Symbol.O : Symbol.X;
     }
 
-    private static boolean askWhoFirst() {
+    private static boolean askHumanFirst() {
         return showDialog("Who goes first?", new String[]{"Me", "Computer"}, 0) == 0;
     }
 

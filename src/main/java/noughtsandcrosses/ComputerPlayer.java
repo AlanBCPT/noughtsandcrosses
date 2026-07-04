@@ -4,90 +4,79 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
-public class ComputerPlayer {
+public final class ComputerPlayer {
 
     private static final int WIN_SCORE  =  10;
     private static final int LOSS_SCORE = -10;
     private static final int DRAW_SCORE =   0;
 
-    private final Symbol symbol;
     private final Difficulty difficulty;
-    private final Random random = new Random();
+    private final Random random;
 
-    public ComputerPlayer(Symbol symbol, Difficulty difficulty) {
-        this.symbol = symbol;
-        this.difficulty = difficulty;
+    public ComputerPlayer(Difficulty difficulty) {
+        this(difficulty, new Random());
     }
 
-    public int chooseMove(Board board) {
+    ComputerPlayer(Difficulty difficulty, Random random) {
+        this.difficulty = difficulty;
+        this.random = random;
+    }
+
+    public int chooseMove(Board board, Symbol toMove) {
         switch (difficulty) {
             case EASY:   return randomMove(board);
-            case MEDIUM: return tacticalMove(board);
-            default:     return optimalMove(board);
+            case MEDIUM: return tacticalMove(board, toMove);
+            case HARD:   return optimalMove(board, toMove);
+            default:     throw new IllegalStateException("Unknown difficulty: " + difficulty);
         }
     }
 
     private int randomMove(Board board) {
-        List<Integer> squares = board.availableSquares();
-        return squares.get(random.nextInt(squares.size()));
+        List<Integer> available = board.availableCells();
+        return available.get(random.nextInt(available.size()));
     }
 
-    private int tacticalMove(Board board) {
-        Optional<Integer> winningSquare = winningSquare(board, symbol);
-        if (winningSquare.isPresent()) return winningSquare.get();
+    private int tacticalMove(Board board, Symbol toMove) {
+        Optional<Integer> winningMove = winningMove(board, toMove);
+        if (winningMove.isPresent()) return winningMove.get();
 
-        Optional<Integer> blockingSquare = winningSquare(board, symbol.opponent());
-        if (blockingSquare.isPresent()) return blockingSquare.get();
+        Optional<Integer> blockingMove = winningMove(board, toMove.opponent());
+        if (blockingMove.isPresent()) return blockingMove.get();
 
         return randomMove(board);
     }
 
-    private Optional<Integer> winningSquare(Board board, Symbol player) {
-        for (int square : board.availableSquares()) {
-            board.place(square, player);
-            boolean wins = board.winner().isPresent();
-            board.undo(square);
-            if (wins) return Optional.of(square);
+    private Optional<Integer> winningMove(Board board, Symbol symbol) {
+        for (int cell : board.availableCells()) {
+            if (board.place(cell, symbol).winner().isPresent()) return Optional.of(cell);
         }
         return Optional.empty();
     }
 
-    private int optimalMove(Board board) {
+    private int optimalMove(Board board, Symbol me) {
         int bestScore = Integer.MIN_VALUE;
-        int bestSquare = -1;
-        for (int square : board.availableSquares()) {
-            board.place(square, symbol);
-            int score = minimax(board, false);
-            board.undo(square);
+        int bestCell = board.availableCells().get(0);
+        for (int cell : board.availableCells()) {
+            int score = minimax(board.place(cell, me), me, me.opponent());
             if (score > bestScore) {
                 bestScore = score;
-                bestSquare = square;
+                bestCell = cell;
             }
         }
-        return bestSquare;
+        return bestCell;
     }
 
-    private int minimax(Board board, boolean isMaximizing) {
+    private int minimax(Board board, Symbol me, Symbol toMove) {
         Optional<Symbol> winner = board.winner();
-        if (winner.isPresent()) return winner.get() == symbol ? WIN_SCORE : LOSS_SCORE;
+        if (winner.isPresent()) return winner.get() == me ? WIN_SCORE : LOSS_SCORE;
         if (board.isFull()) return DRAW_SCORE;
 
-        if (isMaximizing) {
-            int bestScore = Integer.MIN_VALUE;
-            for (int square : board.availableSquares()) {
-                board.place(square, symbol);
-                bestScore = Math.max(bestScore, minimax(board, false));
-                board.undo(square);
-            }
-            return bestScore;
-        } else {
-            int bestScore = Integer.MAX_VALUE;
-            for (int square : board.availableSquares()) {
-                board.place(square, symbol.opponent());
-                bestScore = Math.min(bestScore, minimax(board, true));
-                board.undo(square);
-            }
-            return bestScore;
+        boolean maximizing = toMove == me;
+        int best = maximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        for (int cell : board.availableCells()) {
+            int score = minimax(board.place(cell, toMove), me, toMove.opponent());
+            best = maximizing ? Math.max(best, score) : Math.min(best, score);
         }
+        return best;
     }
 }
