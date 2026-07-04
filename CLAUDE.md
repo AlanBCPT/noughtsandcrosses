@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A Noughts and Crosses (Tic-Tac-Toe) game built in Java with a Swing GUI. Maven is configured but cannot reach Maven Central due to an SSL trust-store issue on this machine — use `javac`/`java` directly instead.
+A Noughts and Crosses (Tic-Tac-Toe) game built in Java with a Swing GUI. Maven works on this machine (`mvn dependency:resolve` and `mvn test-compile` succeed against Maven Central), so `mvn test` is available; the `javac`/`java` commands below remain a documented alternative.
 
 ## Commands
 
